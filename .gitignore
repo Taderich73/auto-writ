@@ -24,6 +24,7 @@ wheels/
 
 # TODO file
 todos/
+docs/plans/
 
 # Twine publishing script
 publish_via_twine.sh
