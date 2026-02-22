@@ -1,0 +1,21 @@
+writ:
+  mode: open
+  prompt: "writ> "
+  history_file: ~/.writ_history
+  shell: /bin/zsh
+
+paths:
+  workflows: ./workflows
+  config: ./config
+
+output:
+  stream: true
+  capture: true
+  buffer_size: 50
+
+secrets:
+  sources:
+    - env
+    - dotenv
+  dotenv_path: .env
+  mask_in_output: true

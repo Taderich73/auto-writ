@@ -1,0 +1,28 @@
+name: Conditional Pipeline
+description: Pipeline with conditionals
+
+variables:
+  target: staging
+
+steps:
+  - name: check
+    run: "echo checking"
+    on_failure: abort
+
+  - name: deploy
+    run: "echo deploying to ${target}"
+    when:
+      - prev_step: succeeded
+    on_failure: abort
+
+  - name: notify
+    run: "echo notifying"
+    when:
+      - target: staging
+    on_failure: continue
+
+  - name: skip-this
+    run: "echo should skip"
+    when:
+      - target: production
+    on_failure: continue

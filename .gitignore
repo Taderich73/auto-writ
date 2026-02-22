@@ -1,0 +1,99 @@
+.git/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# TODO file
+todos/
+
+# Twine publishing script
+publish_via_twine.sh
+
+# Claude specific files and folders
+.claude
+
+# Git worktrees
+.worktrees/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.venv*
+poetry.lock  # Keep poetry.lock in version control if you want reproducible builds, remove this line
+.python-version
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing & Quality Tools
+.tox/
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.pylint.d/
+.pylint_cache/
+.bandit/
+*.cover
+*.log
+nosetests.xml
+test-results/
+.hypothesis/
+
+# Pre-commit
+.pre-commit-cache/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~.nib
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Backups
+*.backup.*
+
+# Documentation build artifacts
+docs/_build/
+docs/_static/
+docs/_templates/
+site/

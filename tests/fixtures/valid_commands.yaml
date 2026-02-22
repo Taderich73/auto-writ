@@ -1,0 +1,25 @@
+variables:
+  project: testapp
+  env: test
+
+commands:
+  lint:
+    description: "Run linter"
+    command: "echo lint ${project}"
+    aliases: [l]
+    tags: [quality]
+
+  test:
+    description: "Run tests"
+    command: "echo test"
+    aliases: [t]
+    tags: [quality, test]
+    env:
+      PYTHONPATH: src
+
+  deploy:
+    description: "Deploy"
+    command: "echo deploy --env ${env}"
+    confirm: true
+    tags: [deploy]
+    timeout: 30

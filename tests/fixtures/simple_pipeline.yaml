@@ -1,0 +1,11 @@
+name: Simple Pipeline
+description: A basic test pipeline
+
+steps:
+  - name: step1
+    run: "echo step1"
+    on_failure: abort
+
+  - name: step2
+    run: "echo step2"
+    on_failure: abort

@@ -1,0 +1,49 @@
+[project]
+name = "auto-writ"
+version = "0.1.0"
+description = "CLI tool for issuing formal commands to infrastructure systems"
+authors = [
+    {name = "dlattka", email = "dennislattka@gmail.com"}
+]
+license = {text = "MIT"}
+requires-python = ">=3.13"
+dependencies = [
+    "prompt-toolkit>=3.0",
+    "PyYAML>=6.0",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+writ = "writ.__main__:main"
+
+[tool.poetry]
+packages = [{include = "writ", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B404", "B603", "B604"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pylint.messages_control]
+disable = ["C0114", "C0115", "C0116"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,20 @@
+writ:
+  mode: open
+  prompt: "test> "
+  history_file: /tmp/.test_repl_history
+  shell: /bin/sh
+
+paths:
+  workflows: ./workflows
+  config: ./config
+
+output:
+  stream: true
+  capture: true
+  buffer_size: 10
+
+secrets:
+  sources:
+    - env
+  dotenv_path: .env
+  mask_in_output: true
