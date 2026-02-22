@@ -1,5 +1,6 @@
 """REPL loop with prompt_toolkit integration."""
 
+import time
 from pathlib import Path
 
 from prompt_toolkit import PromptSession
@@ -282,7 +283,7 @@ class ReplApp:
             resolver=resolver,
             registry=self._registry,
         )
-        fork_id, log_path = runner.fork_shell(match.path, self._logs_dir)
+        _, log_path = runner.fork_shell(match.path, self._logs_dir)
         print(f'Forked "{match.title or match.name}" \u2192 {log_path}')
 
     def _handle_logs(self, args: str) -> None:
@@ -367,8 +368,6 @@ class ReplApp:
                     return
 
                 # Live follow
-                import time
-
                 print("\n(following -- Ctrl+C to stop)\n")
                 while True:
                     line = f.readline()
