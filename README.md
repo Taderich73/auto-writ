@@ -7,6 +7,7 @@ A CLI tool for issuing formal commands to infrastructure systems. Define named c
 - **Named commands** with aliases, tags, confirmation prompts, and timeouts
 - **Variable substitution** (`${VAR}`) with layered resolution: pipeline > config > secrets > environment
 - **Pipelines** — sequential workflows in YAML, Python, or shell scripts with conditional execution and failure policies
+- **Background forks** — run shell pipelines in the background with UUID-named log capture and live tail
 - **Secret management** — dotenv loading, env vars, automatic output masking
 - **Security modes** — `open` (shell escapes allowed) or `strict` (locked down)
 - **Output capture** — ring buffer with replay via `last`
@@ -68,7 +69,9 @@ commands:
 | Command | Description |
 |---|---|
 | `help [--tag TAG]` | List commands, optionally filtered by tag |
-| `pipeline list\|show\|run NAME` | Manage and run pipelines |
+| `pipeline list\|show\|run\|fork NAME` | Manage, run, or fork pipelines |
+| `pipeline logs list` | List fork logs with status |
+| `pipeline logs tail ID` | Live-follow a fork log (Ctrl+C to stop) |
 | `last [N]` | Replay Nth previous output |
 | `history` | Browse command history |
 | `vars` | Show variables and secrets |
@@ -117,6 +120,21 @@ def run(ctx):
     result = ctx.run("echo hello")
     return result
 ```
+
+**Forking shell pipelines** into the background:
+
+```
+writ> pipeline fork deploy-staging
+Forked "deploy-staging" → /home/user/.auto-writ/logs/a1b2c3d4-5678-9abc-def0-123456789abc.log
+
+writ> pipeline logs list
+  a1b2c3d4-5678-9abc-def0-123456789abc  deploy-staging  2026-02-22T14:30:00  running
+
+writ> pipeline logs tail a1b2
+(following -- Ctrl+C to stop)
+```
+
+Fork is supported for shell scripts (`.sh`) only. Output is captured to `~/.auto-writ/logs/<uuid>.log` with metadata headers and exit trailers.
 
 ### Configuration
 
