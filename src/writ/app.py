@@ -9,6 +9,8 @@ from prompt_toolkit.history import FileHistory
 from writ.cli import run_config, run_init
 from writ.commands import CommandRegistry
 from writ.config import (
+    LOGS_DIR,
+    WRIT_HOME,
     CommandsConfig,
     ReplSettings,
     load_commands_config,
@@ -70,6 +72,7 @@ class ReplApp:
             stream_output=settings.stream,
         )
         self._pipeline_loader = PipelineLoader(workflows_dir)
+        self._logs_dir = WRIT_HOME.expanduser() / LOGS_DIR
 
     def is_builtin(self, cmd: str) -> bool:
         """Check if a command is a built-in."""
@@ -179,8 +182,14 @@ class ReplApp:
         elif subcmd == "run":
             self._run_pipeline(subargs)
 
+        elif subcmd == "fork":
+            self._fork_pipeline(subargs)
+
         else:
-            print("Usage: pipeline list | pipeline show <name> | pipeline run <name>")
+            print(
+                "Usage: pipeline list | show <name> | run <name> | fork <name>"
+                " | logs list | logs tail <id>"
+            )
 
     def _show_pipeline(self, name: str) -> None:
         """Display pipeline steps without running."""
@@ -245,6 +254,33 @@ class ReplApp:
                 print("\nPython pipeline completed.")
             except PipelineError as e:
                 print(f"\nPython pipeline FAILED: {e}")
+
+    def _fork_pipeline(self, name: str) -> None:
+        """Fork a shell pipeline into the background."""
+        if not name:
+            print("Usage: pipeline fork <name>")
+            return
+
+        pipelines = self._pipeline_loader.discover()
+        match = next((p for p in pipelines if p.name == name), None)
+        if not match:
+            print(f"Pipeline not found: {name}")
+            return
+
+        if match.pipeline_type != "shell":
+            print(f"Fork is only supported for shell pipelines, not {match.pipeline_type}.")
+            return
+
+        self._logs_dir.mkdir(parents=True, exist_ok=True)
+
+        resolver = self._make_resolver()
+        runner = PipelineRunner(
+            executor=self._executor,
+            resolver=resolver,
+            registry=self._registry,
+        )
+        fork_id, log_path = runner.fork_shell(match.path, self._logs_dir)
+        print(f'Forked "{match.title or match.name}" \u2192 {log_path}')
 
     def _handle_last(self, args: str) -> None:
         """Replay captured output."""

@@ -7,6 +7,7 @@ import pytest
 from writ.app import ReplApp, parse_input
 from writ.commands import CommandRegistry
 from writ.config import CommandConfig, ReplSettings
+from writ.pipeline import PipelineLoader
 
 
 class TestParseInput:
@@ -124,3 +125,60 @@ class TestReplApp:
         app._handle_commands()
         output = capsys.readouterr().out
         assert "No commands configured" in output
+
+
+class TestPipelineFork:
+    @pytest.fixture
+    def app_with_workflows(self, tmp_path: Path) -> ReplApp:
+        settings = ReplSettings(mode="open")
+        workflows_dir = tmp_path / "workflows"
+        workflows_dir.mkdir()
+        logs_dir = tmp_path / "logs"
+        logs_dir.mkdir()
+        app = ReplApp(
+            settings=settings,
+            config_dir=tmp_path,
+            workflows_dir=workflows_dir,
+        )
+        app._logs_dir = logs_dir
+        return app
+
+    def test_fork_rejects_yaml_pipeline(
+        self, app_with_workflows: ReplApp, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        wf_dir = tmp_path / "workflows"
+        (wf_dir / "deploy.yaml").write_text("name: Deploy\ndescription: deploy\nsteps: []\n")
+        app_with_workflows._pipeline_loader = PipelineLoader(wf_dir)
+        app_with_workflows._handle_pipeline("fork deploy")
+        output = capsys.readouterr().out
+        assert "only supported for shell" in output.lower()
+
+    def test_fork_rejects_python_pipeline(
+        self, app_with_workflows: ReplApp, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        wf_dir = tmp_path / "workflows"
+        (wf_dir / "build.py").write_text("def run(ctx): pass\n")
+        app_with_workflows._pipeline_loader = PipelineLoader(wf_dir)
+        app_with_workflows._handle_pipeline("fork build")
+        output = capsys.readouterr().out
+        assert "only supported for shell" in output.lower()
+
+    def test_fork_shell_pipeline(
+        self, app_with_workflows: ReplApp, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        wf_dir = tmp_path / "workflows"
+        script = wf_dir / "hello.sh"
+        script.write_text("#!/bin/sh\necho forked\n")
+        script.chmod(0o755)
+        app_with_workflows._pipeline_loader = PipelineLoader(wf_dir)
+        app_with_workflows._handle_pipeline("fork hello")
+        output = capsys.readouterr().out
+        assert "Forked" in output
+        assert ".log" in output
+
+    def test_fork_unknown_pipeline(
+        self, app_with_workflows: ReplApp, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        app_with_workflows._handle_pipeline("fork nonexistent")
+        output = capsys.readouterr().out
+        assert "not found" in output.lower()
