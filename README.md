@@ -27,12 +27,21 @@ make dev
 ## Usage
 
 ```bash
+# Initialize user config directory
+writ init
+
+# Start the REPL
 writ
+
+# Edit settings in your preferred editor
+writ config
+writ config --editor nano
+writ config commands
 ```
 
 ### Defining commands
 
-Edit `config/commands.yaml`:
+Edit `~/.auto-writ/commands.yaml` (or `config/commands.yaml` for project-local):
 
 ```yaml
 variables:
@@ -65,6 +74,8 @@ commands:
 | `vars` | Show variables and secrets |
 | `reload` | Reload configuration |
 | `mode [strict\|open]` | Switch security mode |
+| `init` | Bootstrap `~/.auto-writ/` config directory |
+| `config [commands]` | Open settings (or commands) in editor |
 | `!command` | Shell escape (open mode only) |
 
 ### Pipelines
@@ -109,7 +120,7 @@ def run(ctx):
 
 ### Configuration
 
-REPL settings live in `config/settings.yaml`:
+Run `writ init` to create `~/.auto-writ/` with default config files. Settings are loaded from `~/.auto-writ/settings.yaml`, falling back to `./config/settings.yaml`, then built-in defaults.
 
 ```yaml
 writ:
@@ -117,6 +128,7 @@ writ:
   prompt: "writ> "
   history_file: ~/.writ_history
   shell: /bin/zsh
+  editor: vim
 
 secrets:
   sources: [env, dotenv]

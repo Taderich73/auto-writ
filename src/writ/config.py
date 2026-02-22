@@ -8,7 +8,9 @@ import yaml
 
 from writ.exceptions import ConfigError
 
+WRIT_HOME = Path("~/.auto-writ")
 VALID_MODES = ("strict", "open")
+VALID_EDITORS = ("vim", "nano", "emacs", "code")
 
 
 @dataclass
@@ -43,6 +45,7 @@ class ReplSettings:
     shell: str = "/bin/zsh"
     workflows_path: str = "./workflows"
     config_path: str = "./config"
+    editor: str = "vim"
     stream: bool = True
     capture: bool = True
     buffer_size: int = 50
@@ -84,6 +87,7 @@ def load_settings(path: Path) -> ReplSettings:
         shell=repl.get("shell", "/bin/zsh"),
         workflows_path=paths.get("workflows", "./workflows"),
         config_path=paths.get("config", "./config"),
+        editor=repl.get("editor", "vim"),
         stream=output.get("stream", True),
         capture=output.get("capture", True),
         buffer_size=output.get("buffer_size", 50),

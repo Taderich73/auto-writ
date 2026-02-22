@@ -79,6 +79,8 @@ class TestReplApp:
         assert app.is_builtin("vars") is True
         assert app.is_builtin("reload") is True
         assert app.is_builtin("mode") is True
+        assert app.is_builtin("init") is True
+        assert app.is_builtin("config") is True
         assert app.is_builtin("exit") is True
         assert app.is_builtin("quit") is True
         assert app.is_builtin("lint") is False

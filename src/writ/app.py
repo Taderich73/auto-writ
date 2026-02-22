@@ -6,6 +6,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.history import FileHistory
 
+from writ.cli import run_config, run_init
 from writ.commands import CommandRegistry
 from writ.config import (
     CommandsConfig,
@@ -18,7 +19,19 @@ from writ.output import OutputBuffer
 from writ.pipeline import PipelineLoader, PipelineRunner
 from writ.variables import SecretStore, VariableResolver
 
-BUILTINS = {"help", "pipeline", "last", "history", "vars", "reload", "mode", "exit", "quit"}
+BUILTINS = {
+    "help",
+    "pipeline",
+    "last",
+    "history",
+    "vars",
+    "reload",
+    "mode",
+    "init",
+    "config",
+    "exit",
+    "quit",
+}
 
 
 def parse_input(text: str) -> tuple[str, str]:
@@ -260,6 +273,20 @@ class ReplApp:
         else:
             print("Usage: mode [strict|open]")
 
+    def _handle_init(self) -> None:
+        """Handle the init builtin."""
+        run_init()
+
+    def _handle_config(self, args: str) -> None:
+        """Handle the config builtin.
+
+        Args:
+            args: Optional target — "commands" to edit commands.yaml,
+                  otherwise opens settings.yaml.
+        """
+        target = "commands" if args == "commands" else "settings"
+        run_config(editor=self._settings.editor, target=target)
+
     def _execute_config_command(self, name_or_alias: str) -> None:
         """Execute a command from the config."""
         try:
@@ -335,6 +362,10 @@ class ReplApp:
                     print("Config reloaded.")
                 elif cmd == "mode":
                     self._handle_mode(args)
+                elif cmd == "init":
+                    self._handle_init()
+                elif cmd == "config":
+                    self._handle_config(args)
                 elif cmd == "!":
                     if self.allow_shell_escape():
                         self._execute_shell(args)

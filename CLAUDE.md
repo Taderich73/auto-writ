@@ -52,7 +52,8 @@ User Input → parse_input() → CommandRegistry lookup → VariableResolver →
 |---|---|
 | `app.py` | `ReplApp` — main REPL loop, built-in commands, prompt_toolkit integration |
 | `commands.py` | `CommandRegistry` — name/alias lookup, tag filtering |
-| `config.py` | `CommandConfig`, `CommandsConfig`, `ReplSettings` dataclasses; YAML loaders |
+| `cli.py` | `run_init()` + `run_config()` — bootstrap `~/.auto-writ/` and open config in editor |
+| `config.py` | `CommandConfig`, `CommandsConfig`, `ReplSettings` dataclasses; YAML loaders; `WRIT_HOME`, `VALID_EDITORS` constants |
 | `executor.py` | `Executor` — subprocess execution with streaming, capture, secret masking, threading for parallel stdout/stderr |
 | `pipeline.py` | `PipelineLoader` + `PipelineRunner` — YAML/Python/shell pipeline discovery and execution with conditionals |
 | `variables.py` | `SecretStore` (masking, dotenv) + `VariableResolver` (`${VAR}` substitution) |
@@ -65,9 +66,19 @@ Pipeline variables → Config variables → Secrets → OS environment
 
 ### Configuration
 
-- `config/settings.yaml` — REPL settings (mode, prompt, shell, paths, output, secrets)
-- `config/commands.yaml` — User-defined commands with aliases, tags, confirmation, timeout, env overrides
+- `~/.auto-writ/settings.yaml` — User-level REPL settings (mode, prompt, shell, editor, paths, output, secrets)
+- `~/.auto-writ/commands.yaml` — User-level commands with aliases, tags, confirmation, timeout, env overrides
+- `config/settings.yaml` — Project-local fallback settings
+- `config/commands.yaml` — Project-local fallback commands
 - `workflows/` — Pipeline files (.yaml, .py, .sh)
+
+Settings resolution order: `~/.auto-writ/settings.yaml` → `./config/settings.yaml` → built-in defaults.
+
+### CLI subcommands
+
+- `writ init` — Bootstrap `~/.auto-writ/` with default settings and commands files
+- `writ config [--editor EDITOR] [settings|commands]` — Open config file in editor
+- `writ` (no args) — Start the REPL
 
 ### Security modes
 
