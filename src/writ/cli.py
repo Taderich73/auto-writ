@@ -2,7 +2,7 @@
 
 import subprocess
 
-from writ.config import VALID_EDITORS, WRIT_HOME
+from writ.config import LOGS_DIR, VALID_EDITORS, WORKFLOWS_DIR, WRIT_HOME
 
 DEFAULT_SETTINGS_YAML = """\
 writ:
@@ -49,6 +49,13 @@ def run_init() -> None:
         home.mkdir(parents=True)
         print(f"Created {home}")
         created_anything = True
+
+    for subdir in (LOGS_DIR, WORKFLOWS_DIR):
+        subdir_path = home / subdir
+        if not subdir_path.exists():
+            subdir_path.mkdir()
+            print(f"Created {subdir_path}")
+            created_anything = True
 
     settings_path = home / "settings.yaml"
     if not settings_path.exists():

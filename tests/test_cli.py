@@ -63,6 +63,26 @@ class TestRunInit:
         assert "settings.yaml" in captured.out
         assert "commands.yaml" in captured.out
 
+    def test_creates_logs_directory(self, tmp_path: Path) -> None:
+        writ_home = tmp_path / ".auto-writ"
+        with patch("writ.cli.WRIT_HOME", writ_home):
+            run_init()
+        assert (writ_home / "logs").is_dir()
+
+    def test_creates_workflows_directory(self, tmp_path: Path) -> None:
+        writ_home = tmp_path / ".auto-writ"
+        with patch("writ.cli.WRIT_HOME", writ_home):
+            run_init()
+        assert (writ_home / "workflows").is_dir()
+
+    def test_logs_dir_idempotent(self, tmp_path: Path) -> None:
+        writ_home = tmp_path / ".auto-writ"
+        with patch("writ.cli.WRIT_HOME", writ_home):
+            run_init()
+            run_init()
+        assert (writ_home / "logs").is_dir()
+        assert (writ_home / "workflows").is_dir()
+
     def test_prints_already_initialized(self, tmp_path: Path, capsys: object) -> None:
         writ_home = tmp_path / ".auto-writ"
         with patch("writ.cli.WRIT_HOME", writ_home):
