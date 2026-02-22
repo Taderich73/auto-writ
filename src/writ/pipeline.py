@@ -1,7 +1,13 @@
 """Pipeline loading, step execution, and conditionals."""
 
 import importlib.util
+import os
+import subprocess
+import threading
+import time
+import uuid
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 import yaml
@@ -232,6 +238,71 @@ class PipelineRunner:
             raise PipelineError(f"Python pipeline missing run(ctx) function: {path}", step_name="")
         module.run(ctx)
         return ctx
+
+    def fork_shell(self, path: Path, log_dir: Path) -> tuple[str, Path]:
+        """Fork a shell script into the background with log capture.
+
+        Args:
+            path: Path to the shell script.
+            log_dir: Directory to write the log file.
+
+        Returns:
+            Tuple of (uuid string, log file path).
+        """
+        fork_id = str(uuid.uuid4())
+        log_path = log_dir / f"{fork_id}.log"
+        log_file = open(log_path, "w")  # noqa: SIM115 -- closed by daemon thread
+
+        start_time = datetime.now()
+        header = (
+            f"--- FORK: {path.stem} ---\n"
+            f"Started: {start_time.isoformat(timespec='seconds')}\n"
+            f"Script: {path}\n"
+        )
+        log_file.write(header)
+        log_file.flush()
+
+        run_env = os.environ.copy()
+        run_env.update(self._executor._secrets.as_env_dict())
+
+        try:
+            proc = subprocess.Popen(
+                [self._executor._shell, str(path)],
+                stdout=log_file,
+                stderr=log_file,
+                env=run_env,
+            )
+        except OSError:
+            log_file.close()
+            raise
+
+        # NOTE: PID/Log lines written after Popen; fast scripts may interleave
+        # output before these lines. Acceptable trade-off — PID is only
+        # available after the process starts.
+        log_file.write(f"PID: {proc.pid}\n")
+        log_file.write(f"Log: {log_path}\n")
+        log_file.write("---\n")
+        log_file.flush()
+
+        start_mono = time.monotonic()
+
+        def _wait_and_write_trailer() -> None:
+            proc.wait()
+            duration = time.monotonic() - start_mono
+            end_time = datetime.now()
+            log_file.write(
+                f"\n---\n"
+                f"Finished: {end_time.isoformat(timespec='seconds')}\n"
+                f"Exit code: {proc.returncode}\n"
+                f"Duration: {duration:.1f}s\n"
+                f"---\n"
+            )
+            log_file.close()
+
+        thread = threading.Thread(target=_wait_and_write_trailer, daemon=True)
+        thread.start()
+
+        return fork_id, log_path
 
     def _execute_step(self, step: PipelineStep) -> ExecutionResult:
         """Execute a single pipeline step."""

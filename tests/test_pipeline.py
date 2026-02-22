@@ -1,5 +1,6 @@
 """Tests for pipeline loading and execution."""
 
+import time
 from pathlib import Path
 
 import pytest
@@ -187,3 +188,78 @@ class TestPipelineContext:
         )
         ctx.log("test message")
         assert "test message" in ctx.logs
+
+
+class TestForkShell:
+    def test_fork_returns_uuid_and_log_path(
+        self, tmp_path: Path, executor: Executor, resolver: VariableResolver
+    ) -> None:
+        log_dir = tmp_path / "logs"
+        log_dir.mkdir()
+        script = tmp_path / "test.sh"
+        script.write_text("#!/bin/sh\necho hello from fork\n")
+        script.chmod(0o755)
+
+        runner = PipelineRunner(executor=executor, resolver=resolver)
+        fork_id, log_path = runner.fork_shell(script, log_dir)
+
+        assert len(fork_id) == 36  # UUID4 format
+        assert log_path.exists()
+        assert log_path.parent == log_dir
+        assert log_path.name == f"{fork_id}.log"
+
+    def test_fork_writes_metadata_header(
+        self, tmp_path: Path, executor: Executor, resolver: VariableResolver
+    ) -> None:
+        log_dir = tmp_path / "logs"
+        log_dir.mkdir()
+        script = tmp_path / "test.sh"
+        script.write_text("#!/bin/sh\necho hello\n")
+        script.chmod(0o755)
+
+        runner = PipelineRunner(executor=executor, resolver=resolver)
+        fork_id, log_path = runner.fork_shell(script, log_dir)
+
+        # Give the process a moment to start
+        time.sleep(0.1)
+        content = log_path.read_text()
+        assert "--- FORK:" in content
+        assert "Started:" in content
+        assert "Script:" in content
+        assert str(script) in content
+
+    def test_fork_captures_output_and_trailer(
+        self, tmp_path: Path, executor: Executor, resolver: VariableResolver
+    ) -> None:
+        log_dir = tmp_path / "logs"
+        log_dir.mkdir()
+        script = tmp_path / "test.sh"
+        script.write_text("#!/bin/sh\necho hello from fork\n")
+        script.chmod(0o755)
+
+        runner = PipelineRunner(executor=executor, resolver=resolver)
+        fork_id, log_path = runner.fork_shell(script, log_dir)
+
+        # Wait for process to finish and trailer to be written
+        time.sleep(1.0)
+        content = log_path.read_text()
+        assert "hello from fork" in content
+        assert "Finished:" in content
+        assert "Exit code: 0" in content
+        assert "Duration:" in content
+
+    def test_fork_captures_nonzero_exit(
+        self, tmp_path: Path, executor: Executor, resolver: VariableResolver
+    ) -> None:
+        log_dir = tmp_path / "logs"
+        log_dir.mkdir()
+        script = tmp_path / "fail.sh"
+        script.write_text("#!/bin/sh\nexit 42\n")
+        script.chmod(0o755)
+
+        runner = PipelineRunner(executor=executor, resolver=resolver)
+        fork_id, log_path = runner.fork_shell(script, log_dir)
+
+        time.sleep(1.0)
+        content = log_path.read_text()
+        assert "Exit code: 42" in content
