@@ -11,6 +11,8 @@ from writ.exceptions import ConfigError
 WRIT_HOME = Path("~/.auto-writ")
 VALID_MODES = ("strict", "open")
 VALID_EDITORS = ("vim", "nano", "emacs", "code")
+LOGS_DIR = "logs"
+WORKFLOWS_DIR = "workflows"
 
 
 @dataclass
