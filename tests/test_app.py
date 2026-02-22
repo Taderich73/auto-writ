@@ -73,6 +73,7 @@ class TestReplApp:
     def test_is_builtin_recognizes_builtins(self, settings: ReplSettings) -> None:
         app = ReplApp(settings=settings, config_dir=Path("."), workflows_dir=Path("."))
         assert app.is_builtin("help") is True
+        assert app.is_builtin("commands") is True
         assert app.is_builtin("pipeline") is True
         assert app.is_builtin("last") is True
         assert app.is_builtin("history") is True
@@ -104,3 +105,22 @@ class TestReplApp:
         assert "help" in completions
         assert "lint" in completions
         assert "l" in completions
+
+    def test_handle_commands_lists_configured_commands(
+        self, settings: ReplSettings, registry: CommandRegistry, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        app = ReplApp(settings=settings, config_dir=Path("."), workflows_dir=Path("."))
+        app._registry = registry
+        app._handle_commands()
+        output = capsys.readouterr().out
+        assert "lint" in output
+        assert "Run linter" in output
+        assert "quality" in output
+
+    def test_handle_commands_empty_registry(
+        self, settings: ReplSettings, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        app = ReplApp(settings=settings, config_dir=Path("."), workflows_dir=Path("."))
+        app._handle_commands()
+        output = capsys.readouterr().out
+        assert "No commands configured" in output

@@ -21,6 +21,7 @@ from writ.variables import SecretStore, VariableResolver
 
 BUILTINS = {
     "help",
+    "commands",
     "pipeline",
     "last",
     "history",
@@ -105,6 +106,18 @@ class ReplApp:
             pipeline_vars=pipeline_vars,
             secrets=self._secrets,
         )
+
+    def _handle_commands(self) -> None:
+        """List configured commands from commands.yaml."""
+        names = self._registry.list_names()
+        if not names:
+            print("No commands configured.")
+            return
+        for name in names:
+            cmd = self._registry.get(name)
+            aliases = f" ({', '.join(cmd.aliases)})" if cmd.aliases else ""
+            tags = f"  [{', '.join(cmd.tags)}]" if cmd.tags else ""
+            print(f"  {name}{aliases}{tags}  -- {cmd.description}")
 
     def _handle_help(self, args: str) -> None:
         """Handle the help command."""
@@ -348,6 +361,8 @@ class ReplApp:
                     return 0
                 elif cmd == "help":
                     self._handle_help(args)
+                elif cmd == "commands":
+                    self._handle_commands()
                 elif cmd == "pipeline":
                     self._handle_pipeline(args)
                 elif cmd == "last":

@@ -15,7 +15,7 @@ def resolve_paths(
     workflows_path: str = "./workflows",
 ) -> tuple[Path, Path]:
     """Resolve config and workflows directory paths."""
-    return Path(config_path), Path(workflows_path)
+    return Path(config_path).expanduser(), Path(workflows_path).expanduser()
 
 
 def _build_parser() -> argparse.ArgumentParser:

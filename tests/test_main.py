@@ -21,6 +21,16 @@ def test_resolve_paths_from_settings() -> None:
     assert workflows_dir == Path("/tmp/mywf")
 
 
+def test_resolve_paths_expands_tilde() -> None:
+    config_dir, workflows_dir = resolve_paths(
+        config_path="~/.auto-writ", workflows_path="~/.auto-writ/workflows"
+    )
+    assert "~" not in str(config_dir)
+    assert "~" not in str(workflows_dir)
+    assert config_dir == Path.home() / ".auto-writ"
+    assert workflows_dir == Path.home() / ".auto-writ" / "workflows"
+
+
 class TestBuildParser:
     def test_parses_init(self) -> None:
         parser = _build_parser()
