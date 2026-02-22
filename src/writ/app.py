@@ -185,6 +185,9 @@ class ReplApp:
         elif subcmd == "fork":
             self._fork_pipeline(subargs)
 
+        elif subcmd == "logs":
+            self._handle_logs(subargs)
+
         else:
             print(
                 "Usage: pipeline list | show <name> | run <name> | fork <name>"
@@ -281,6 +284,106 @@ class ReplApp:
         )
         fork_id, log_path = runner.fork_shell(match.path, self._logs_dir)
         print(f'Forked "{match.title or match.name}" \u2192 {log_path}')
+
+    def _handle_logs(self, args: str) -> None:
+        """Handle pipeline logs subcommands."""
+        parts = args.split(None, 1)
+        subcmd = parts[0] if parts else ""
+        subargs = parts[1].strip() if len(parts) > 1 else ""
+
+        if subcmd == "list":
+            self._logs_list()
+        elif subcmd == "tail":
+            self._logs_tail(subargs)
+        else:
+            print("Usage: pipeline logs list | pipeline logs tail <id>")
+
+    def _logs_list(self) -> None:
+        """List fork log files with metadata."""
+        if not self._logs_dir.exists():
+            print("No logs found.")
+            return
+
+        log_files = sorted(
+            self._logs_dir.glob("*.log"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if not log_files:
+            print("No logs found.")
+            return
+
+        for log_path in log_files:
+            fork_id = log_path.stem
+            name = "unknown"
+            started = "?"
+            status = "running"
+
+            try:
+                content = log_path.read_text()
+                for line in content.splitlines():
+                    if line.startswith("--- FORK: "):
+                        name = line[10:].rstrip(" -")
+                    elif line.startswith("Started: "):
+                        started = line[9:]
+                    elif line.startswith("Exit code: "):
+                        status = f"exit {line[11:]}"
+            except OSError:
+                pass
+
+            print(f"  {fork_id}  {name}  {started}  {status}")
+
+    def _logs_tail(self, id_prefix: str) -> None:
+        """Live-follow a fork log file. Ctrl+C to stop."""
+        if not id_prefix:
+            print("Usage: pipeline logs tail <id>")
+            return
+
+        if not self._logs_dir.exists():
+            print(f"Log not found: {id_prefix}")
+            return
+
+        matches = [p for p in self._logs_dir.glob("*.log") if p.stem.startswith(id_prefix)]
+        if not matches:
+            print(f"Log not found: {id_prefix}")
+            return
+        if len(matches) > 1:
+            print(f"Ambiguous prefix '{id_prefix}', matches {len(matches)} logs.")
+            return
+
+        log_path = matches[0]
+        try:
+            with open(log_path) as f:
+                # Print existing content
+                while True:
+                    line = f.readline()
+                    if not line:
+                        break
+                    print(line, end="")
+
+                # Check if process is done (trailer present)
+                content = log_path.read_text()
+                if "\n---\nFinished:" in content or "\n---\nExit code:" in content:
+                    return
+
+                # Live follow
+                import time
+
+                print("\n(following -- Ctrl+C to stop)\n")
+                while True:
+                    line = f.readline()
+                    if line:
+                        print(line, end="", flush=True)
+                        # Check if trailer appeared
+                        if "Exit code:" in line:
+                            # Drain remaining lines
+                            for remaining in f:
+                                print(remaining, end="", flush=True)
+                            return
+                    else:
+                        time.sleep(0.2)
+        except KeyboardInterrupt:
+            print("\n")
 
     def _handle_last(self, args: str) -> None:
         """Replay captured output."""
